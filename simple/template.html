@@ -27,45 +27,20 @@
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
     <title>{{ head_title }}</title>
     <!-- Styles -->
-    {% if embed %}
-    <style type="text/css" media="print">
-      {{ css.print.contents }}
-    </style>
-    <style type="text/css" media="screen, projection">
-      {{ css.screen.contents }}
-    </style>
+    {% for css in css_assets %}
+    {% if embed and css.embeddable %}
+      <style type="text/css" media="{{ css.media }}">{{ css.contents }}</style>
     {% else %}
-    <link rel="stylesheet" media="print" href="{{ css.print.path_url }}">
-    <link rel="stylesheet" media="screen, projection" href="{{ css.screen.path_url }}">
+       <link rel="stylesheet" href="{{ css.path_url }}">
     {% endif %}
-    {% for css in user_css %}
-      {% if embed %}
-      <style type="text/css" media="screen, projection">
-        {{ css.contents }}
-      </style>
-      {% else %}
-      <link rel="stylesheet" href="{{ css.path_url }}">
-      {% endif %}
-    {% endfor %}
-    <!-- /Styles -->
-    <!-- Javascripts -->
+  {% endfor %}
+  {% for js in js_assets %}
     {% if embed %}
-    <script>
-      {{ js.contents }}
-    </script>
+      <script>{{ js.contents }}</script>
     {% else %}
-    <script type="text/javascript" src="{{ js.path_url }}"></script>
-    {% endif %}
-    {% for js in user_js %}
-      {% if embed %}
-      <script>
-        {{ js.contents }}
-      </script>
-      {% else %}
       <script type="text/javascript" src="{{ js.path_url }}"></script>
-      {% endif %}
-    {% endfor %}
-    <!-- /Javascripts -->
+    {% endif %}
+  {% endfor %}
 </head>
 <body>
   <div id="blank"></div>
@@ -114,20 +89,38 @@
     <h2>Table of Contents</h2>
     <table>
       <caption>Table of Contents</caption>
-      {% for section in toc %}
-      <tr id="toc-row-{{ section.number }}">
-        <th><a href="#slide{{ section.number }}">{{ section.title }}</a></th>
-        <td><a href="#slide{{ section.number }}">{{ section.number }}</a></td>
-      </tr>
-      {% if section.sub %}
-        {% for subsection in section.sub %}
-        <tr id="toc-row-{{ subsection.number }}" class="sub">
-          <th><a href="#slide{{ subsection.number }}">{{ subsection.title }}</a></th>
-          <td><a href="#slide{{ subsection.number }}">{{ subsection.number }}</a></td>
-        </tr>
+
+  <!-- macro for generating subsection of TOC -->
+      {% macro subtoc(section) -%}
+        {{ caller() }}
+              {% for subsection in section.sub %}
+              <tr id="toc-row-{{ subsection.number }}" class="sub">
+                <th><a href="#slide:{{ subsection.number }}">{{ subsection.title }}</a></th>
+                <td><a href="#slide:{{ subsection.number }}">{{ subsection.number }}</a></td>
+              </tr>
+              {% if subsection.sub %}
+                <!-- generating recursively subsections of TOC -->
+                {% call subtoc(subsection) %}
+                {% endcall %}
+              {% endif %}
+              {% endfor %}
+      {%- endmacro %}
+  <!-- end of macro -->
+        <!-- generating sections of TOC -->
+        {% for section in toc %}
+          <tr id="toc-row-{{ section.number }}">
+            <th><a href="#slide{{ section.number }}">{{ section.title }}</a></th>
+            <td><a href="#slide{{ section.number }}">{{ section.number }}</a></td>
+          </tr>
+          {% if section.sub %}
+            {% for subsection in section.sub %}
+            <tr id="toc-row-{{ subsection.number }}" class="sub">
+              <th><a href="#slide{{ subsection.number }}">{{ subsection.title }}</a></th>
+              <td><a href="#slide{{ subsection.number }}">{{ subsection.number }}</a></td>
+            </tr>
+            {% endfor %}
+          {% endif %}
         {% endfor %}
-      {% endif %}
-      {% endfor %}
     </table>
   </div>
   {% endif %}
